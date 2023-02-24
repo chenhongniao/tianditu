@@ -2,101 +2,137 @@
   <div class="map" ref="map"></div>
 </template>
 <script>
+import 'ol/ol.css'
 import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile.js';
 import WMTS from 'ol/source/WMTS.js';
 import * as olProj from 'ol/proj';
 import * as olExtent from 'ol/extent';
-import Attribution from 'ol/control/Attribution.js';
+import WMTSTileGrid from 'ol/tilegrid/WMTS';
 
 
 export default {
   name: 'tianditu',
-  data(){
+  data() {
     return {
       map: null,
       key: '37d614f39eb9dcfa72b2f1ab5aff22ff',
       vec: 'http://t0.tianditu.gov.cn/vec_c/wmts?tk=',
-      cva: 'http://t0.tianditu.gov.cn/cva_c/wmts?tk=',
+      cva: 'http://t0.tianditu.gov.cn/cva_c/wmts?LAYER=cva&tk=',
       projection: olProj.get('EPSG:4326'),
-      resolutions: new Array(14),
-      matrixIds: new Array(14)
-
+      resolutions: new Array(19),
+      matrixIds: new Array(19),
+      myLayer: []
     }
   },
-  computed:{
-    urlCompute(){
+  computed: {
+    urlCompute() {
       return {
-      url_vec: this.vec + this.key,
-      url_cva: this.cva + this.key
+        url_vec: this.vec + this.key,
+        url_cva: this.cva + this.key
       }
     },
-    projectionExtent(){
+    projectionExtent() {
       return this.projection.getExtent()
     },
-    size(){
+    size() {
       return olExtent.getWidth(this.projectionExtent) / 256
     },
-    attribution(){
-      return new Attribution({
-        html: '<strong>数据来源：天地图</strong>'
-      })
-    },
-    wmtsLayer_cva(){
+
+    /* wmtsLayer_cva(){
       return new TileLayer({
-        title: '天地图矢量图层',
+        // title: '天地图矢量图层注记',
         opacity: 1,
         source: new WMTS({
-          attributions: [this.attribution],
-          url: url_cva,
+          attributions: '<i>数据来源：天地图</i>',
+          url: this.urlCompute.url_cva,
           matrixSet: 'c',
-          format: 'png'
-
+          format: 'png',
+          projection: this.projection,
+          tileGrid: new WMTSTileGrid({
+            origin: olExtent.getTopLeft(this.projectionExtent),
+            resolutions: this.resolutions,
+            matrixIds: this.matrixIds
+          }),
+          style: 'default',
+          wrapX: true
         })
       })
-    }
+    }, */
+
+    wmtsLayer_vec() { }
   },
-  created(){
-    this.computeArray()
-  },
-  mounted(){
-    this.createMap()
+  mounted() {
+    this.computeArray(this.resolutions, this.matrixIds),
+      this.wmtsLayer(this.urlCompute.url_cva, this.projection, this.projectionExtent, this.resolutions, this.matrixIds),
+      this.createMap()
+    // this.test(this.attribution),
+    // this.test(this.urlCompute.url_cva),
+    // this.test(this.projection)
+    // this.test(this.projectionExtent),
+    // this.test(this.resolutions),
+    // this.test(this.matrixIds)
   },
   methods: {
-    computeArray(){
-      this.resolutions.forEach((v,i)=>{
-        v = this.size / Math.pow(2,i)
-      });
-      this.matrixIds.forEach((v,i)=>{
-        v = i
-      })
+    // 创建layers对象
+    wmtsLayer(url, projection, projectionExtent, resolution, matrixIds) {
+      this.myLayer.push(
+        new TileLayer({
+          // title: '天地图矢量图层注记',
+          opacity: 1,
+          source: new WMTS({
+            attributions: '<i>数据来源：天地图</i>',
+            url: url,
+            matrixSet: 'c',
+            format: 'png',
+            projection: projection,
+            tileGrid: new WMTSTileGrid({
+              origin: olExtent.getTopLeft(projectionExtent),
+              resolutions: resolution,
+              matrixIds: matrixIds
+            }),
+            style: 'default',
+            wrapX: true
+          })
+        })
+      )
     },
-    createMap(){
-      new Map({
+
+
+    computeArray(resolution, matrix) {
+      // console.log(this);
+      for (let i = 0; i < resolution.length; i++) {
+        resolution[i] = this.size / Math.pow(2, i)
+        matrix[i] = i
+      }
+      // new Array() 创建的是一个稀疏数组，
+      // 对于稀疏数组 map、filter、foreach 等方法并不会调用传入的第一个参数
+      /*       console.log(this);
+            this.resolutions = this.resolutions.map(function(_ ,i){
+              console.log(this);
+              return this.size / Math.pow(2,i)
+              // console.log(this);
+            });
+             this.matrixIds= this.matrixIds.map(function(v,i){
+              return i
+            }) */
+    },
+    createMap() {
+      this.map = new Map({
         target: this.$refs.map,
         layers: [
-          new TileLayer({
-            title: '天地图矢量图层',
-            source: new WMTS({
-              url: this.urlCompute.url_vec,
-              wrapX: false
-            })
-          }),
-          new TileLayer({
-            title: '天地图矢量注记',
-            source: new WMTS({
-              url: this.urlCompute.url_cva,
-              wrapX: false
-            })
-          })
+          ...this.myLayer
         ],
         view: new View({
-          center: [ 0, 0],
+          center: [0, 0],
           zoom: 3,
-          projection: projection
+          projection: this.projection
         })
       })
+    },
+    test(val) {
+      console.log(val);
     }
   }
 
@@ -104,8 +140,8 @@ export default {
 }
 </script>
 <style lang="less">
-  .map{
-    width: 100%;
-    height: 800px;
-  }
+.map {
+  width: 100%;
+  height: 800px;
+}
 </style>
