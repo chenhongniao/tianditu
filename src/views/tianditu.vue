@@ -18,7 +18,7 @@ export default {
     return {
       map: null,
       key: '37d614f39eb9dcfa72b2f1ab5aff22ff',
-      vec: 'http://t0.tianditu.gov.cn/vec_c/wmts?tk=',
+      vec: 'http://t0.tianditu.gov.cn/vec_c/wmts?LAYER=vec&tk=',
       cva: 'http://t0.tianditu.gov.cn/cva_c/wmts?LAYER=cva&tk=',
       projection: olProj.get('EPSG:4326'),
       resolutions: new Array(19),
@@ -65,7 +65,10 @@ export default {
   },
   mounted() {
     this.computeArray(this.resolutions, this.matrixIds),
-      this.wmtsLayer(this.urlCompute.url_cva, this.projection, this.projectionExtent, this.resolutions, this.matrixIds),
+      // this.wmtsLayer(this.urlCompute.url_vec, this.projection, this.projectionExtent, this.resolutions, this.matrixIds),
+      // this.wmtsLayer(this.urlCompute.url_cva, this.projection, this.projectionExtent, this.resolutions, this.matrixIds),
+      this.wmtsLayer(this.urlCompute.url_vec),
+      this.wmtsLayer(this.urlCompute.url_cva),
       this.createMap()
     // this.test(this.attribution),
     // this.test(this.urlCompute.url_cva),
@@ -76,7 +79,7 @@ export default {
   },
   methods: {
     // 创建layers对象
-    wmtsLayer(url, projection, projectionExtent, resolution, matrixIds) {
+    wmtsLayer(url, projection = this.projection, projectionExtent = this.projectionExtent, resolutions = this.resolutions, matrixIds = this.matrixIds) {
       this.myLayer.push(
         new TileLayer({
           // title: '天地图矢量图层注记',
@@ -89,7 +92,7 @@ export default {
             projection: projection,
             tileGrid: new WMTSTileGrid({
               origin: olExtent.getTopLeft(projectionExtent),
-              resolutions: resolution,
+              resolutions: resolutions,
               matrixIds: matrixIds
             }),
             style: 'default',
@@ -121,9 +124,7 @@ export default {
     createMap() {
       this.map = new Map({
         target: this.$refs.map,
-        layers: [
-          ...this.myLayer
-        ],
+        layers: this.myLayer,
         view: new View({
           center: [0, 0],
           zoom: 3,
@@ -142,6 +143,6 @@ export default {
 <style lang="less">
 .map {
   width: 100%;
-  height: 800px;
+  height: 1000px;
 }
 </style>
